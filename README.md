@@ -1,5 +1,21 @@
+### Tested on Azure HDInsight
+### Cluster setup - we do need some RAM!
+In mapred-site.xml:
+
+mapreduce.map.memory.mb: 4096
+
+mapreduce.reduce.memory.mb: 8192
+
+Each Container will run JVMs for the Map and Reduce tasks. The JVM heap size should be set to lower than the Map and Reduce memory defined above, so that they are within the bounds of the Container memory allocated by YARN.
+
+In mapred-site.xml:
+
+mapreduce.map.java.opts: -Xmx3072m
+
+mapreduce.reduce.java.opts: -Xmx6144m
+
+
 ### only in case of changes to the cluster
-### tested on Azure HDInsight
 
 replace conf in 
 hbaseapp\conf 
