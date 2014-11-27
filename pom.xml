@@ -107,7 +107,7 @@
     
  	<resource>
 		<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z9.sld</include>
@@ -116,7 +116,7 @@
     
   	<resource>
    		<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z10.sld</include>
@@ -125,7 +125,7 @@
     
  	<resource>
     	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z11.sld</include>
@@ -134,7 +134,7 @@
     
  	<resource>
     	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z12.sld</include>
@@ -143,7 +143,7 @@
     
     <resource>
     	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z13.sld</include>
@@ -152,7 +152,7 @@
     
   	<resource>
      	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z14.sld</include>
@@ -161,7 +161,7 @@
     
    	<resource>
      	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z15.sld</include>
@@ -170,7 +170,7 @@
     
   	<resource>
        	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_points_thermal_z16.sld</include>
@@ -179,7 +179,7 @@
     
   	<resource>
        	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>${basedir}/src/safecast/tilerenderer</directory>
+      	<directory>src/com/ultratendency/tilerenderer</directory>
       	<filtering>false</filtering>
       	<includes>
         	<include>sievert_colormap_ios.sld</include>

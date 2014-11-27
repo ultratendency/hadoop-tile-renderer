@@ -49,10 +49,10 @@ hbase shell
     $ hbase ( main ) :001:0 > create 'safecast23','cf'
 
 ######################################## Import-Job
-    $ hadoop jar D:\Users\safecast.headnode0\Desktop\hbaseapp-1.0-SNAPSHOT.jar safecast.mapreduce.ImportFromSafecastCSV -t safecast23 -f cf -i /Input/measurements.csv
+    $ hadoop jar D:\Users\safecast.headnode0\Desktop\hbaseapp-1.0-SNAPSHOT.jar com.ultratendency.mapreduce.ImportFromSafecastCSV -t safecast23 -f cf -i /Input/measurements.csv
 
 ######################################## PointTileRenderer-Job 
-    $ hadoop jar D:\Users\safecast.headnode0\Desktop\hbaseapp-1.0-SNAPSHOT.jar safecast.mapreduce.PointTileMapReduce -t safecast23 -f cf -c value -o /Output/ptiles9 -zmin 9 -zmax 9 -r 16
+    $ hadoop jar D:\Users\safecast.headnode0\Desktop\hbaseapp-1.0-SNAPSHOT.jar com.ultratendency.mapreduce.PointTileMapReduce -t safecast23 -f cf -c value -o /Output/ptiles9 -zmin 9 -zmax 9 -r 16
 
 - zmin = zmax !!!!!! ATTENTION: only zoom levels 9-12 supported; set zmin = zmax 
 - -t Table

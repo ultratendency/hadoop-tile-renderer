@@ -1,4 +1,4 @@
-package safecast.mapreduce;
+package com.ultratendency.mapreduce;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,40 +27,42 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import com.ultratendency.tilerenderer.GoogleTileHelper;
+import com.ultratendency.tilerenderer.Quadkey;
+import com.ultratendency.tilerenderer.TileRenderer;
+import org.opengis.geometry.Envelope;
 
-import safecast.tilerenderer.GoogleTileHelper;
-import safecast.tilerenderer.Quadkey;
-import safecast.tilerenderer.TileRenderer;
+public class PointTileMapReduce {
 
-
-public class PointTileMapReduce 
-{
 	public static final String NAME = "PointTileMapReduce";
 	
-	static class PointTileMapper extends TableMapper<Text, Text>
-	{				
+	public static class PointTileMapper extends TableMapper<Text, Text> {
+
 		@Override
-		public void map(ImmutableBytesWritable row, Result columns, Context context) throws IOException
-		{			
-			for(KeyValue kv : columns.list())
-			{
-				String key = Bytes.toStringBinary(kv.getRow());	
+		public void map(ImmutableBytesWritable row, Result columns, Context context)
+				throws IOException {
+
+			for(KeyValue kv : columns.list()) {
+
+				String key = Bytes.toStringBinary(kv.getRow());
+
 				String value = Bytes.toStringBinary(kv.getValue());
 	
 				Configuration conf = context.getConfiguration();
+
 				int zoom_min = Integer.parseInt(conf.get("zoom_min"));
+
 				int zoom_max = Integer.parseInt(conf.get("zoom_max"));
 				
-				for (int zoomLevel = zoom_min; zoomLevel <= zoom_max; zoomLevel++) 
-				{
-					String cuttedKey = key.substring(0, zoomLevel);
+				for (int zoomLevel = zoom_min; zoomLevel <= zoom_max; zoomLevel++) {
 
-					try 
-					{
-						context.write(new Text(cuttedKey), new Text(value));
-					} 
-					catch (InterruptedException e) 
-					{
+					String cutKey = key.substring(0, zoomLevel);
+
+					try {
+
+						context.write(new Text(cutKey), new Text(value));
+
+					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
@@ -68,39 +70,42 @@ public class PointTileMapReduce
 		}
 	}
 	
-	
-	static class PointTileReducer extends Reducer<Text, Text, Text, Text>
-	{
+	private static class PointTileReducer extends Reducer<Text, Text, Text, Text> {
+
 		BinaryWritable bw = new BinaryWritable();
 		
 		@Override
-		protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException
-		{																			  						
+		protected void reduce(Text key, Iterable<Text> values, Context context)
+				throws IOException, InterruptedException {
+
 			int zoom = Quadkey.GetZoomLevelFromQuadKey(key.toString());			
+
 			int[] TileXY = Quadkey.QuadKeyToTileXY(key.toString());
-    		org.opengis.geometry.Envelope env = GoogleTileHelper.GetEnv(TileXY[0], TileXY[1], zoom);
+
+			Envelope env = GoogleTileHelper.GetEnv(TileXY[0], TileXY[1], zoom);
                		
     		TileRenderer tr = new TileRenderer(env,FileOutputFormat.getOutputPath(context).toString());
-    		
-    		
-    		//tr.context = context;
-    		
-    		tr.renderPoints(values, zoom, zoom+"_"+TileXY[0]+"_"+TileXY[1]+"_P");
+
+    		tr.renderPoints(values, zoom, zoom + "_" + TileXY[0] + "_" + TileXY[1] + "_P");
     		    		   		
-    		byte[] bytesToWrite = tr.ImageByteArray;   		
+    		byte[] bytesToWrite = tr.ImageByteArray;
+
 			Path file = new Path(FileOutputFormat.getOutputPath(context).toString() + "/" + tr.FileName);			
+
 			FSDataOutputStream out = file.getFileSystem(context.getConfiguration()).create(file);
 			
 			bw.setBytes(bytesToWrite);
+
 			bw.write(out);
+
 			out.close();
 			
 			context.write(key, new Text(""));
 		}
 	}
 		
-	private static CommandLine parseArgs(String[] args) throws ParseException
-	{
+	private static CommandLine parseArgs(String[] args) throws ParseException {
+
 		Options options = new Options();
 			
 		Option o = new Option("t", "table", true, "table to read from (must exist)");
@@ -141,64 +146,79 @@ public class PointTileMapReduce
 		options.addOption("d", "debug", false, "switch on DEBUG log level");
 			
 		CommandLineParser parser = new PosixParser();
+
 		CommandLine cmd = null;
 			
-		try
-		{
+		try {
 			cmd = parser.parse(options, args);
-		}
-		catch(Exception e)
-		{
+
+		} catch(Exception e) {
+
 			System.err.println("ERROR: " + e.getMessage() + "\n");
+
 			HelpFormatter formatter = new HelpFormatter();
+
 			formatter.printHelp(NAME + " ", options, true);
+
 			System.exit(-1);
 		}
 				
 		return cmd;
 	}
-	
-	
-	//-t test -f cf -c value -o testoutputdir -zmin 7 -zmax 8
-	public static void main(String args[]) throws Exception
-	{
+
+	public static void main(String args[])
+			throws Exception {
+
 		Configuration conf = HBaseConfiguration.create();
-		
-		
+
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+
 		CommandLine cmd = parseArgs(otherArgs);
 		
 		String table = cmd.getOptionValue("t");
+
 		String family = cmd.getOptionValue("f");
+
 		String column = cmd.getOptionValue("c");
+
 		String output = cmd.getOptionValue("o");
-		String zmin = cmd.getOptionValue("zmin");	
+
+		String zmin = cmd.getOptionValue("zmin");
+
 		String zmax = cmd.getOptionValue("zmax");
+
 		int reducerTasks = Integer.parseInt(cmd.getOptionValue("r"));
 				
 		Scan scan = new Scan();
+
 		scan.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
+
 		scan.setCaching(1000);
+
 		scan.setCacheBlocks(false);  // don't set to true for MR jobs
-		
-	
+
 		conf.set("zoom_min", zmin);
+
 		conf.set("zoom_max", zmax);
 
-			
 		Job job = new Job(conf, NAME);
 		
-		
 		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z9.sld"));
+
 		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z10.sld"));
+
 		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z11.sld"));
 
-		
 		job.setJarByClass(PointTileMapReduce.class);
+
 		TableMapReduceUtil.initTableMapperJob(table, scan, PointTileMapper.class, Text.class, Text.class, job);
-		job.setReducerClass(PointTileReducer.class);	
+
+		job.setReducerClass(PointTileReducer.class);
+
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(BinaryWritable.class);	
+
+		job.setOutputValueClass(BinaryWritable.class);
+
 		job.setNumReduceTasks(reducerTasks);
 		
 		FileOutputFormat.setOutputPath(job, new Path(output));
