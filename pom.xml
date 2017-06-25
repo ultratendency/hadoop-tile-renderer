@@ -115,91 +115,13 @@
     <build>
         <resources>
             <resource>
+                <directory>${basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
                 <directory>${basedir}/conf</directory>
                 <filtering>false</filtering>
                 <includes>
                     <include>hbase-site.xml</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z9.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z10.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z11.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z12.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z13.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z14.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z15.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_points_thermal_z16.sld</include>
-                </includes>
-            </resource>
-
-            <resource>
-                <targetPath>safecast/tilerenderer</targetPath>
-                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>sievert_colormap_ios.sld</include>
                 </includes>
             </resource>
         </resources>
