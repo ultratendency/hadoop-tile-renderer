@@ -1,8 +1,5 @@
 package com.ultratendency.mapreduce;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -27,261 +24,204 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 import com.ultratendency.tilerenderer.Quadkey;
 
-public class ImportFromSafecastCSV {
+import java.io.IOException;
+import java.sql.Timestamp;
 
-	public static final String NAME = "ImportFromSafecastCSV";
+public final class ImportFromSafecastCSV {
+    public static final String NAME = "ImportFromSafecastCSV";
 
-	public enum Counters { LINES }
-	
-	public static class ImportMapper extends Mapper<LongWritable, Text, ImmutableBytesWritable, Put> {
+    public ImportFromSafecastCSV() {
+    }
 
-		private byte[] family = null;
+    public enum Counters { LINES }
 
-		private final int detail = 23;
-		
-		@Override
-		protected void setup(Context context)
-				throws IOException, InterruptedException {
+    public static final class ImportMapper extends Mapper<LongWritable, Text, ImmutableBytesWritable, Put> {
+        private ImportMapper() {
+        }
 
-			String strFamily = context.getConfiguration().get("conf.family");						
-			family = Bytes.toBytes(strFamily);
-		}
-		
-		@Override
-		public void map(LongWritable offset, Text line, Context context)
-				throws IOException {
+        private byte[] family = null;
+        private final int detail = 23;
 
-			try {
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            String strFamily = context.getConfiguration().get("conf.family");
+            family = Bytes.toBytes(strFamily);
+        }
 
-				String lineArr[] = line.toString().split("\\,");
-				
-				//Skip first line
-				if (lineArr[0].equals("Captured Time")) {
-					return;
-				}
-								
+        @Override
+        public void map(LongWritable offset, Text line, Context context) throws IOException {
+            try {
+                String[] lineArr = line.toString().split("\\,");
+
+                //Skip first line
+                if (lineArr[0].equals("Captured Time")) {
+                    return;
+                }
+
                 double value = Double.parseDouble(lineArr[3]);
-
                 String unit = lineArr[4].toLowerCase();
-
                 String deviceID = lineArr[6];
-                
                 double microsievert = ConvertRadiationLevelToMicroSievert(deviceID, unit, value);
-				
+
                 if (microsievert != -1) {
-
                     String capturedtime = lineArr[0];
+                    long timestampInMS = ConvertTimeStampToLong(capturedtime);
 
-					long timestampInMS = ConvertTimeStampToLong(capturedtime);
-                                   	
                     if (timestampInMS != -1) {
-
-                    	double latitude = Double.parseDouble(lineArr[1]);
-
-						double longitude = Double.parseDouble(lineArr[2]);
-                    	                    
-                        double rounded_value = (double)Math.round(microsievert * 1000) / 1000;
-        				
+                        double latitude = Double.parseDouble(lineArr[1]);
+                        double longitude = Double.parseDouble(lineArr[2]);
+                        double roundedValue = (double) Math.round(microsievert * 1000) / 1000;
                         String quadkey = Quadkey.ComputeQuadkey(latitude, longitude, detail);
+                        byte[] rowkey = Bytes.toBytes(quadkey);
 
-						byte[] rowkey = Bytes.toBytes(quadkey);
+                        Put put = new Put(rowkey);
+                        put.add(family, Bytes.toBytes("value"), timestampInMS,
+                                Bytes.toBytes(latitude + "," + longitude + "," + roundedValue));
 
-        				Put put = new Put(rowkey);
+                        context.write(new ImmutableBytesWritable(rowkey), put);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        				put.add(family, Bytes.toBytes("value"), timestampInMS,
-								Bytes.toBytes(latitude + "," + longitude + "," + rounded_value));
+            context.getCounter(Counters.LINES).increment(1);
+        }
+    }
 
-        				context.write(new ImmutableBytesWritable(rowkey), put); 
-                	}                	  				
-                }					
-			}
-			catch(Exception e) {
-				e.printStackTrace();
-			}
-			
-			context.getCounter(Counters.LINES).increment(1);
-		} 
-	}
-		
-	private static CommandLine parseArgs(String[] args)
-			throws ParseException {
+    private static CommandLine parseArgs(String[] args) throws ParseException {
+        Options options = new Options();
 
-		Options options = new Options();
-			
-		Option o = new Option("t", "table", true, "table to import into (must exist)");
-		o.setArgName("table-name");
-		o.setRequired(true);			
-		options.addOption(o);
-				
-		o = new Option("f", "family", true, "family to store row data into (must exist)");
-		o.setArgName("family");
-		o.setRequired(true);
-		options.addOption(o);
-			
-		o = new Option("i", "input", true, "the directory or file to read from");
-		o.setArgName("path-in-HDFS");
-		o.setRequired(true);
-		options.addOption(o);
-			
-		options.addOption("d", "debug", false, "switch on DEBUG log level");
-			
-		CommandLineParser parser = new PosixParser();
+        Option o = new Option("t", "table", true, "table to import into (must exist)");
+        o.setArgName("table-name");
+        o.setRequired(true);
+        options.addOption(o);
 
-		CommandLine cmd = null;
-			
-		try {
+        o = new Option("f", "family", true, "family to store row data into (must exist)");
+        o.setArgName("family");
+        o.setRequired(true);
+        options.addOption(o);
 
-			cmd = parser.parse(options, args);
+        o = new Option("i", "input", true, "the directory or file to read from");
+        o.setArgName("path-in-HDFS");
+        o.setRequired(true);
+        options.addOption(o);
 
-		} catch(Exception e) {
+        options.addOption("d", "debug", false, "switch on DEBUG log level");
 
-			System.err.println("ERROR: " + e.getMessage() + "\n");
+        CommandLineParser parser = new PosixParser();
+        CommandLine cmd = null;
 
-			HelpFormatter formatter = new HelpFormatter();
+        try {
+            cmd = parser.parse(options, args);
 
-			formatter.printHelp(NAME + " ", options, true);
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e.getMessage() + "\n");
 
-			System.exit(-1);
-		}
-				
-		return cmd;
-	}
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(NAME + " ", options, true);
 
-	public static void main(String args[])
-			throws Exception {
+            System.exit(-1);
+        }
 
-		Configuration conf = HBaseConfiguration.create();
+        return cmd;
+    }
 
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+    public static void main(String[] args) throws Exception {
+        Configuration conf = HBaseConfiguration.create();
+        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
-		CommandLine cmd = parseArgs(otherArgs);
-		
-		String table = cmd.getOptionValue("t");
+        CommandLine cmd = parseArgs(otherArgs);
+        String table = cmd.getOptionValue("t");
+        String input = cmd.getOptionValue("i");
+        String family = cmd.getOptionValue("f");
 
-		String input = cmd.getOptionValue("i");
+        conf.set("conf.family", family);
 
-		String family = cmd.getOptionValue("f");
+        Job job = new Job(conf, "Import from file " + input + " into table " + table);
+        job.setJarByClass(ImportFromSafecastCSV.class);
+        job.setMapperClass(ImportMapper.class);
+        job.setOutputFormatClass(TableOutputFormat.class);
+        job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, table);
+        job.setOutputKeyClass(ImmutableBytesWritable.class);
+        job.setOutputValueClass(Writable.class);
+        job.setNumReduceTasks(0);
 
-		conf.set("conf.family", family);
-		
-		Job job = new Job(conf, "Import from file " + input + " into table " + table);
-		
-		job.setJarByClass(ImportFromSafecastCSV.class);
+        FileInputFormat.addInputPath(job, new Path(input));
 
-		job.setMapperClass(ImportMapper.class);
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
 
-		job.setOutputFormatClass(TableOutputFormat.class);
-
-		job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, table);
-
-		job.setOutputKeyClass(ImmutableBytesWritable.class);
-
-		job.setOutputValueClass(Writable.class);
-
-		job.setNumReduceTasks(0);
-		
-		FileInputFormat.addInputPath(job, new Path(input));
-		
-		System.exit(job.waitForCompletion(true) ? 0 : 1);				
-	}
-	
-    private static int[] arr350 = { 5, 15, 16, 17, 18, 22 };
-
-	private static int[] arr100 = { 6, 7, 11, 13, 23 };
-
-	private static int[] arr132 = { 4, 9, 10, 12, 19, 24 };
+    private static int[] Arr350 = { 5, 15, 16, 17, 18, 22 };
+    private static int[] Arr100 = { 6, 7, 11, 13, 23 };
+    private static int[] Arr132 = { 4, 9, 10, 12, 19, 24 };
 
     private static double ConvertRadiationLevelToMicroSievert(String deviceID, String unit, Double value) {
-
         double microsievert = -1;
-                       
+
         if (unit.equals("microsievert") || unit.equals("usv")) {
-
-			microsievert = value;
-
-		} else if (unit.equals("cpm") && deviceID.equals("")) {
-
+            microsievert = value;
+        } else if (unit.equals("cpm") && deviceID.equals("")) {
             microsievert =  value / 350.0;
-
         } else if (unit.equals("cpm") && !deviceID.equals("")) {
+            int id;
 
-            int id = 0;
-
-			try {
-
+            try {
                 id = Integer.parseInt(deviceID);
-
             } catch (NumberFormatException e) {
-
                 return -1;
             }
-              
-            if (TestInArray(arr350, id)) {
 
+            if (TestInArray(Arr350, id)) {
                 microsievert =  value / 350.0;
-
-			} else if (TestInArray(arr100,id)) {
-
+            } else if (TestInArray(Arr100, id)) {
                 microsievert = value / 100;
-
-            } else if (TestInArray(arr132,id)) {
-
-				microsievert =  value / 132;
-
+            } else if (TestInArray(Arr132, id)) {
+                microsievert =  value / 132;
             } else if (id == 21) {
-
-				microsievert = value / 1750;
-            }               
+                microsievert = value / 1750;
+            }
         }
 
         if (microsievert > 0 && microsievert <= 1000) {
-
-			return microsievert;
+            return microsievert;
 
         } else {
             return -1;
-        }    
+        }
     }
-    
+
     private static long ConvertTimeStampToLong(String timestamp) {
-
         Timestamp ts1 = java.sql.Timestamp.valueOf(timestamp);
-
         long timestampInMS = ts1.getTime();
 
         //Skip bad future lines
-        if(timestampInMS > System.currentTimeMillis()) {
+        if (timestampInMS > System.currentTimeMillis()) {
+            System.out.println("in future:" + timestamp);
 
-        	System.out.println("in future:" + timestamp);
-
-			return -1;
+            return -1;
         }
-        
+
         Timestamp ts2010 = java.sql.Timestamp.valueOf("2010-01-01 00:00:00");
+        long msOf2010 = ts2010.getTime();
 
-		long msOf2010 = ts2010.getTime();
-        
         //Skip outdated lines
-        if(timestampInMS < msOf2010) {
+        if (timestampInMS < msOf2010) {
+            System.out.println("outdated:" + timestamp);
 
-			System.out.println("outdated:" + timestamp);
-
-			return -1;
+            return -1;
         }
-                     
-    	return timestampInMS;   	
+
+        return timestampInMS;
     }
-    
-    private static boolean TestInArray(int[] arr,int checkValue) {
 
-		for (int i : arr) {
+    private static boolean TestInArray(int[] arr, int checkValue) {
+        for (int i : arr) {
+            if (i == checkValue) {
+                return true;
+            }
+        }
 
-			if (i == checkValue) {
-
-				return true;
-			}
-		}
-
-    	return false;
+        return false;
     }
 }

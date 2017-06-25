@@ -1,8 +1,5 @@
 package com.ultratendency.mapreduce;
 
-import java.io.IOException;
-import java.net.URI;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -32,197 +29,164 @@ import com.ultratendency.tilerenderer.Quadkey;
 import com.ultratendency.tilerenderer.TileRenderer;
 import org.opengis.geometry.Envelope;
 
-public class PointTileMapReduce {
+import java.io.IOException;
+import java.net.URI;
 
-	public static final String NAME = "PointTileMapReduce";
-	
-	public static class PointTileMapper extends TableMapper<Text, Text> {
+public final class PointTileMapReduce {
+    public static final String NAME = "PointTileMapReduce";
 
-		@Override
-		public void map(ImmutableBytesWritable row, Result columns, Context context)
-				throws IOException {
+    private PointTileMapReduce() {
+    }
 
-			for(KeyValue kv : columns.list()) {
+    public static final class PointTileMapper extends TableMapper<Text, Text> {
+        private PointTileMapper() {
+        }
 
-				String key = Bytes.toStringBinary(kv.getRow());
+        @Override
+        public void map(ImmutableBytesWritable row, Result columns, Context context) throws IOException {
 
-				String value = Bytes.toStringBinary(kv.getValue());
-	
-				Configuration conf = context.getConfiguration();
+            for (KeyValue kv : columns.list()) {
+                String key = Bytes.toStringBinary(kv.getRow());
+                String value = Bytes.toStringBinary(kv.getValue());
+                Configuration conf = context.getConfiguration();
+                int zoomMin = Integer.parseInt(conf.get("zoom_min"));
+                int zoomMax = Integer.parseInt(conf.get("zoom_max"));
 
-				int zoom_min = Integer.parseInt(conf.get("zoom_min"));
+                for (int zoomLevel = zoomMin; zoomLevel <= zoomMax; zoomLevel++) {
+                    String cutKey = key.substring(0, zoomLevel);
 
-				int zoom_max = Integer.parseInt(conf.get("zoom_max"));
-				
-				for (int zoomLevel = zoom_min; zoomLevel <= zoom_max; zoomLevel++) {
+                    try {
+                        context.write(new Text(cutKey), new Text(value));
 
-					String cutKey = key.substring(0, zoomLevel);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 
-					try {
+    private static final class PointTileReducer extends Reducer<Text, Text, Text, Text> {
+        BinaryWritable bw = new BinaryWritable();
 
-						context.write(new Text(cutKey), new Text(value));
+        private PointTileReducer() {
+        }
 
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-	}
-	
-	private static class PointTileReducer extends Reducer<Text, Text, Text, Text> {
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Context context)
+                throws IOException, InterruptedException {
+            int zoom = Quadkey.GetZoomLevelFromQuadKey(key.toString());
+            int[] tileXY = Quadkey.QuadKeyToTileXY(key.toString());
+            Envelope env = GoogleTileHelper.GetEnv(tileXY[0], tileXY[1], zoom);
+            TileRenderer tr = new TileRenderer(env, FileOutputFormat.getOutputPath(context).toString());
 
-		BinaryWritable bw = new BinaryWritable();
-		
-		@Override
-		protected void reduce(Text key, Iterable<Text> values, Context context)
-				throws IOException, InterruptedException {
+            tr.renderPoints(values, zoom, zoom + "_" + tileXY[0] + "_" + tileXY[1] + "_P");
 
-			int zoom = Quadkey.GetZoomLevelFromQuadKey(key.toString());			
+            byte[] bytesToWrite = tr.imageByteArray;
+            Path file = new Path(FileOutputFormat.getOutputPath(context).toString() + "/" + tr.fileName);
+            FSDataOutputStream out = file.getFileSystem(context.getConfiguration()).create(file);
 
-			int[] TileXY = Quadkey.QuadKeyToTileXY(key.toString());
+            bw.setBytes(bytesToWrite);
+            bw.write(out);
+            out.close();
 
-			Envelope env = GoogleTileHelper.GetEnv(TileXY[0], TileXY[1], zoom);
-               		
-    		TileRenderer tr = new TileRenderer(env,FileOutputFormat.getOutputPath(context).toString());
+            context.write(key, new Text(""));
+        }
+    }
 
-    		tr.renderPoints(values, zoom, zoom + "_" + TileXY[0] + "_" + TileXY[1] + "_P");
-    		    		   		
-    		byte[] bytesToWrite = tr.ImageByteArray;
+    private static CommandLine parseArgs(String[] args) throws ParseException {
+        Options options = new Options();
 
-			Path file = new Path(FileOutputFormat.getOutputPath(context).toString() + "/" + tr.FileName);			
+        Option o = new Option("t", "table", true, "table to read from (must exist)");
+        o.setArgName("table-name");
+        o.setRequired(true);
+        options.addOption(o);
 
-			FSDataOutputStream out = file.getFileSystem(context.getConfiguration()).create(file);
-			
-			bw.setBytes(bytesToWrite);
+        o = new Option("f", "family", true, "family to read row data from (must exist)");
+        o.setArgName("family");
+        o.setRequired(true);
+        options.addOption(o);
 
-			bw.write(out);
+        o = new Option("c", "column", true, "column to read data from (must exist)");
+        o.setArgName("column");
+        o.setRequired(true);
+        options.addOption(o);
 
-			out.close();
-			
-			context.write(key, new Text(""));
-		}
-	}
-		
-	private static CommandLine parseArgs(String[] args) throws ParseException {
+        o = new Option("o", "output file", true, "output file to write data to (must exist)");
+        o.setArgName("output");
+        o.setRequired(true);
+        options.addOption(o);
 
-		Options options = new Options();
-			
-		Option o = new Option("t", "table", true, "table to read from (must exist)");
-		o.setArgName("table-name");
-		o.setRequired(true);			
-		options.addOption(o);
-				
-		o = new Option("f", "family", true, "family to read row data from (must exist)");
-		o.setArgName("family");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		o = new Option("c", "column", true, "column to read data from (must exist)");
-		o.setArgName("column");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		o = new Option("o", "output file", true, "output file to write data to (must exist)");
-		o.setArgName("output");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		o = new Option("zmin", "zoom minimum", true, "the minimal zoom level (must exist)");
-		o.setArgName("ZoomMin");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		o = new Option("zmax", "zoom minimum", true, "the maximum zoom level (must exist)");
-		o.setArgName("ZoomMax");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		o = new Option("r", "reducetasks", true, "the number of reducer tasks (must exist)");
-		o.setArgName("reducetasks");
-		o.setRequired(true);
-		options.addOption(o);
-			
-		options.addOption("d", "debug", false, "switch on DEBUG log level");
-			
-		CommandLineParser parser = new PosixParser();
+        o = new Option("zmin", "zoom minimum", true, "the minimal zoom level (must exist)");
+        o.setArgName("ZoomMin");
+        o.setRequired(true);
+        options.addOption(o);
 
-		CommandLine cmd = null;
-			
-		try {
-			cmd = parser.parse(options, args);
+        o = new Option("zmax", "zoom minimum", true, "the maximum zoom level (must exist)");
+        o.setArgName("ZoomMax");
+        o.setRequired(true);
+        options.addOption(o);
 
-		} catch(Exception e) {
+        o = new Option("r", "reducetasks", true, "the number of reducer tasks (must exist)");
+        o.setArgName("reducetasks");
+        o.setRequired(true);
+        options.addOption(o);
 
-			System.err.println("ERROR: " + e.getMessage() + "\n");
+        options.addOption("d", "debug", false, "switch on DEBUG log level");
 
-			HelpFormatter formatter = new HelpFormatter();
+        CommandLineParser parser = new PosixParser();
+        CommandLine cmd = null;
 
-			formatter.printHelp(NAME + " ", options, true);
+        try {
+            cmd = parser.parse(options, args);
 
-			System.exit(-1);
-		}
-				
-		return cmd;
-	}
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e.getMessage() + "\n");
 
-	public static void main(String args[])
-			throws Exception {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(NAME + " ", options, true);
 
-		Configuration conf = HBaseConfiguration.create();
+            System.exit(-1);
+        }
 
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+        return cmd;
+    }
 
-		CommandLine cmd = parseArgs(otherArgs);
-		
-		String table = cmd.getOptionValue("t");
+    public static void main(String[] args) throws Exception {
+        Configuration conf = HBaseConfiguration.create();
+        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+        CommandLine cmd = parseArgs(otherArgs);
+        String table = cmd.getOptionValue("t");
+        String family = cmd.getOptionValue("f");
+        String column = cmd.getOptionValue("c");
+        String output = cmd.getOptionValue("o");
+        String zmin = cmd.getOptionValue("zmin");
+        String zmax = cmd.getOptionValue("zmax");
+        int reducerTasks = Integer.parseInt(cmd.getOptionValue("r"));
 
-		String family = cmd.getOptionValue("f");
+        Scan scan = new Scan();
+        scan.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
+        scan.setCaching(1000);
+        scan.setCacheBlocks(false);  // don't set to true for MR jobs
 
-		String column = cmd.getOptionValue("c");
+        conf.set("zoom_min", zmin);
+        conf.set("zoom_max", zmax);
 
-		String output = cmd.getOptionValue("o");
+        Job job = new Job(conf, NAME);
+        job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z9.sld"));
+        job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z10.sld"));
+        job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z11.sld"));
+        job.setJarByClass(PointTileMapReduce.class);
 
-		String zmin = cmd.getOptionValue("zmin");
+        TableMapReduceUtil.initTableMapperJob(table, scan, PointTileMapper.class, Text.class, Text.class, job);
 
-		String zmax = cmd.getOptionValue("zmax");
+        job.setReducerClass(PointTileReducer.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(BinaryWritable.class);
+        job.setNumReduceTasks(reducerTasks);
 
-		int reducerTasks = Integer.parseInt(cmd.getOptionValue("r"));
-				
-		Scan scan = new Scan();
+        FileOutputFormat.setOutputPath(job, new Path(output));
 
-		scan.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
-
-		scan.setCaching(1000);
-
-		scan.setCacheBlocks(false);  // don't set to true for MR jobs
-
-		conf.set("zoom_min", zmin);
-
-		conf.set("zoom_max", zmax);
-
-		Job job = new Job(conf, NAME);
-		
-		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z9.sld"));
-
-		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z10.sld"));
-
-		job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z11.sld"));
-
-		job.setJarByClass(PointTileMapReduce.class);
-
-		TableMapReduceUtil.initTableMapperJob(table, scan, PointTileMapper.class, Text.class, Text.class, job);
-
-		job.setReducerClass(PointTileReducer.class);
-
-		job.setOutputKeyClass(Text.class);
-
-		job.setOutputValueClass(BinaryWritable.class);
-
-		job.setNumReduceTasks(reducerTasks);
-		
-		FileOutputFormat.setOutputPath(job, new Path(output));
-				
-		System.exit(job.waitForCompletion(true) ? 0 : 1);
-	}	
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
 }
