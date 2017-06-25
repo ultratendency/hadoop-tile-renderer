@@ -80,7 +80,7 @@ public final class ImportFromSafecastCSV {
                         byte[] rowkey = Bytes.toBytes(quadkey);
 
                         Put put = new Put(rowkey);
-                        put.add(family, Bytes.toBytes("value"), timestampInMS,
+                        put.addColumn(family, Bytes.toBytes("value"), timestampInMS,
                                 Bytes.toBytes(latitude + "," + longitude + "," + roundedValue));
 
                         context.write(new ImmutableBytesWritable(rowkey), put);
@@ -143,7 +143,7 @@ public final class ImportFromSafecastCSV {
 
         conf.set("conf.family", family);
 
-        Job job = new Job(conf, "Import from file " + input + " into table " + table);
+        Job job = Job.getInstance(conf, "Import from file " + input + " into table " + table);
         job.setJarByClass(ImportFromSafecastCSV.class);
         job.setMapperClass(ImportMapper.class);
         job.setOutputFormatClass(TableOutputFormat.class);

@@ -10,8 +10,9 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -44,10 +45,9 @@ public final class PointTileMapReduce {
 
         @Override
         public void map(ImmutableBytesWritable row, Result columns, Context context) throws IOException {
-
-            for (KeyValue kv : columns.list()) {
-                String key = Bytes.toStringBinary(kv.getRow());
-                String value = Bytes.toStringBinary(kv.getValue());
+            for (Cell cell : columns.listCells()) {
+                String key = Bytes.toStringBinary(CellUtil.cloneRow(cell));
+                String value = Bytes.toStringBinary(CellUtil.cloneValue(cell));
                 Configuration conf = context.getConfiguration();
                 int zoomMin = Integer.parseInt(conf.get("zoom_min"));
                 int zoomMax = Integer.parseInt(conf.get("zoom_max"));
@@ -172,7 +172,7 @@ public final class PointTileMapReduce {
         conf.set("zoom_min", zmin);
         conf.set("zoom_max", zmax);
 
-        Job job = new Job(conf, NAME);
+        Job job = Job.getInstance(conf, NAME);
         job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z9.sld"));
         job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z10.sld"));
         job.addCacheFile(new URI("/Renderer/sievert_points_thermal_z11.sld"));
