@@ -1,212 +1,231 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.microsoft.examples</groupId>
-  <artifactId>hbaseapp</artifactId>
-  <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <name>hbaseapp</name>
-  <url>http://maven.apache.org</url>
-  
-  
-    <!-- ======================================================== -->
-  <!--                         Repositories                     -->
-  <!-- ======================================================== -->
-  <repositories>
-    <repository>
-      <id>geosolutions</id>
-      <name>GeoSolutions libraries repository</name>
-      <url>http://maven.geo-solutions.it/</url>
-    </repository>
-    <repository>
-      <id>codehaus</id>
-      <name>Codehaus maven repository</name>
-      <url>http://repository.codehaus.org/</url>
-    </repository>
-    <repository>
-      <id>jboss</id>
-      <name>jboss</name>
-      <url>http://repository.jboss.org/maven2/</url>
-    </repository>
-    <repository>
-      <id>codehaus.org</id>
-      <name>CodeHaus Snapshots</name>
-      <url>http://snapshots.repository.codehaus.org</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-     <repository>
-      <id>osgeo</id>
-      <name>Open Source Geospatial Foundation Repository</name>
-      <url>http://download.osgeo.org/webdav/geotools/</url>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <id>opengeo</id>
-      <name>OpenGeo Maven Repository</name>
-      <url>http://repo.opengeo.org</url>
-    </repository>
-    <repository>
-      <id>maven2-repository.dev.java.net</id>
-      <name>Java.net Repository for Maven</name>
-      <url>http://download.java.net/maven/2/</url>
-      <layout>default</layout>
-    </repository>   
-  </repositories>
-  
-  
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-client</artifactId>
-      <version>0.98.4-hadoop2</version>
-    </dependency>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.ultratendency</groupId>
+    <artifactId>hadoop-tile-renderer</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0.0</version>
+    <name>Hadoop Tile Renderer</name>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Dr. Robert Neumann</name>
+            <email>robert.neumann@ultratendency.com</email>
+        </developer>
+        <developer>
+            <name>Joachim Wilken</name>
+            <email>joachim.wilken@ultratendency.com</email>
+        </developer>
+        <developer>
+            <name>Jan Hentschel</name>
+            <email>jan.hentschel@ultratendency.com</email>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>Ultra Tendency GmbH</name>
+        <url>http://ultratendency.com/</url>
+    </organization>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>geosolutions</id>
+            <name>GeoSolutions libraries repository</name>
+            <url>http://maven.geo-solutions.it/</url>
+        </repository>
+        <repository>
+            <id>codehaus</id>
+            <name>Codehaus maven repository</name>
+            <url>http://repository.codehaus.org/</url>
+        </repository>
+        <repository>
+            <id>jboss</id>
+            <name>jboss</name>
+            <url>http://repository.jboss.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>codehaus.org</id>
+            <name>CodeHaus Snapshots</name>
+            <url>http://snapshots.repository.codehaus.org</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>osgeo</id>
+            <name>Open Source Geospatial Foundation Repository</name>
+            <url>http://download.osgeo.org/webdav/geotools/</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>opengeo</id>
+            <name>OpenGeo Maven Repository</name>
+            <url>http://repo.opengeo.org</url>
+        </repository>
+        <repository>
+            <id>maven2-repository.dev.java.net</id>
+            <name>Java.net Repository for Maven</name>
+            <url>http://download.java.net/maven/2/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+    <dependencies>
         <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <version>0.98.4-hadoop2</version>
-    </dependency>
-    
-        
-    <dependency>
-	<groupId>eu.agrosense.client</groupId>
-	<artifactId>lib-geotools</artifactId>
-	<version>10.2-NB72</version>	
-	</dependency>
-	
-	<dependency>
-		<groupId>it.geosolutions.imageio-ext</groupId>
-		<artifactId>imageio-ext-streams</artifactId>
-		<version>1.1.7</version>	
-	</dependency>
-       
-    
-  </dependencies>
-<build>
-  <sourceDirectory>src</sourceDirectory>  
-  <resources>
-    <resource>
-      <directory>${basedir}/conf</directory>
-      <filtering>false</filtering>
-      <includes>
-        <include>hbase-site.xml</include>
-      </includes>
-    </resource>
-    
- 	<resource>
-		<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z9.sld</include>
-      	</includes>
-    </resource>
-    
-  	<resource>
-   		<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z10.sld</include>
-      	</includes>
-    </resource>
-    
- 	<resource>
-    	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z11.sld</include>
-      	</includes>
-    </resource>
-    
- 	<resource>
-    	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z12.sld</include>
-      	</includes>
-    </resource>
-    
-    <resource>
-    	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z13.sld</include>
-      	</includes>
-    </resource>
-    
-  	<resource>
-     	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z14.sld</include>
-      	</includes>
-    </resource>
-    
-   	<resource>
-     	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z15.sld</include>
-      	</includes>
-    </resource>
-    
-  	<resource>
-       	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_points_thermal_z16.sld</include>
-      	</includes>
-    </resource>
-    
-  	<resource>
-       	<targetPath>safecast/tilerenderer</targetPath>
-      	<directory>src/com/ultratendency/tilerenderer</directory>
-      	<filtering>false</filtering>
-      	<includes>
-        	<include>sievert_colormap_ios.sld</include>
-      	</includes>
-    </resource>
-    
-  </resources>
-  <plugins>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-shade-plugin</artifactId>
-      <version>2.3</version>
-      <configuration>
-        <transformers>
-          <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
-          </transformer>
-        </transformers>
-      </configuration>
-      <executions>
-        <execution>
-          <phase>package</phase>
-          <goals>
-            <goal>shade</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>       
-  </plugins>
-</build>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
+            <version>0.98.4-hadoop2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-server</artifactId>
+            <version>0.98.4-hadoop2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>eu.agrosense.client</groupId>
+            <artifactId>lib-geotools</artifactId>
+            <version>10.2-NB72</version>
+        </dependency>
+        <dependency>
+            <groupId>it.geosolutions.imageio-ext</groupId>
+            <artifactId>imageio-ext-streams</artifactId>
+            <version>1.1.7</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/conf</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>hbase-site.xml</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z9.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z10.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z11.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z12.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z13.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z14.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z15.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_points_thermal_z16.sld</include>
+                </includes>
+            </resource>
+
+            <resource>
+                <targetPath>safecast/tilerenderer</targetPath>
+                <directory>src/main/java/com/ultratendency/tilerenderer</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>sievert_colormap_ios.sld</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <transformers>
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
+                        </transformer>
+                    </transformers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
