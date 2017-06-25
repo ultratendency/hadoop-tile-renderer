@@ -10,45 +10,72 @@ import java.util.List;
 import java.util.Map.Entry;
 import javax.imageio.ImageIO;
 
-public class TileMerger  {
+public final class TileMerger  {
     private String inputDir;
     private String outputDir;
     private HashMap<String, List<String>> map = new HashMap<>();
     private boolean hasSuffix = false;
 
-    public TileMerger(String Input, String Output) {
+    private TileMerger(String Input, String Output) {
         this.inputDir = Input;
         this.outputDir = Output;
     }
 
-    public void MapImages() {
-        File[] files = new File(this.inputDir).listFiles();
+    public static void main(String[] args) {
+        String inputDir = args[0];
+        String outputDir = args[1];
 
-        for (File file : files) {
-            String tempFileName = file.getName();
-            String fileType = "";
+        System.out.println("Mergin Tiles in: " + inputDir);
+
+        boolean success = (new File(outputDir)).mkdirs();
+
+        if (success) {
+            TileMerger tr = new TileMerger(inputDir, outputDir);
+            tr.mapImages();
 
             try {
-                fileType = tempFileName.substring(tempFileName.length() - 4, tempFileName.length());
-            } catch (Exception e) {
+                tr.reduceImages();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if (fileType.equals(".png")) {
-                if (tempFileName.contains("_P")) {
-                    hasSuffix = true;
+            System.out.println("Tiles Merged");
+
+        } else {
+            System.out.println("Output Directory creation failed");
+        }
+    }
+
+    private void mapImages() {
+        File[] files = new File(this.inputDir).listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                String tempFileName = file.getName();
+                String fileType = "";
+
+                try {
+                    fileType = tempFileName.substring(tempFileName.length() - 4, tempFileName.length());
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
-                String[] strarr = tempFileName.split("\\.");
-                String[] secsplit = strarr[0].split("_");
-                int zoom = Integer.parseInt(secsplit[0]);
-                int tileX = Integer.parseInt(secsplit[1]);
-                int tileY = Integer.parseInt(secsplit[2]);
-                String qkey = Quadkey.TileXYToQuadKey(tileX, tileY, zoom);
-                String cuttedKey = qkey.substring(0, qkey.length() - 1);
-                String pos = qkey.substring(qkey.length() - 1);
+                if (fileType.equals(".png")) {
+                    if (tempFileName.contains("_P")) {
+                        hasSuffix = true;
+                    }
 
-                addToMap(map, cuttedKey, pos + ";" + tempFileName);
+                    String[] strarr = tempFileName.split("\\.");
+                    String[] secsplit = strarr[0].split("_");
+                    int zoom = Integer.parseInt(secsplit[0]);
+                    int tileX = Integer.parseInt(secsplit[1]);
+                    int tileY = Integer.parseInt(secsplit[2]);
+                    String qkey = Quadkey.tileXYToQuadKey(tileX, tileY, zoom);
+                    String cuttedKey = qkey.substring(0, qkey.length() - 1);
+                    String pos = qkey.substring(qkey.length() - 1);
+
+                    addToMap(map, cuttedKey, pos + ";" + tempFileName);
+                }
             }
         }
     }
@@ -61,7 +88,7 @@ public class TileMerger  {
         map.get(key).add(value);
     }
 
-    public void ReduceImages() throws IOException {
+    private void reduceImages() throws IOException {
         for (Entry<String, List<String>> entry : this.map.entrySet()) {
             BufferedImage containerImg = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
             Graphics g = containerImg.getGraphics();
@@ -91,7 +118,7 @@ public class TileMerger  {
                         break;
                 }
 
-                int[] tileXY = Quadkey.QuadKeyToTileXY(entry.getKey());
+                int[] tileXY = Quadkey.quadKeyToTileXY(entry.getKey());
                 String saveName;
 
                 if (hasSuffix) {
@@ -103,31 +130,6 @@ public class TileMerger  {
 
                 ImageIO.write(containerImg, "png", new File(this.outputDir + "/" + saveName));
             }
-        }
-    }
-
-    public static void main(String[] args) {
-        String inputDir = args[0];
-        String outputDir = args[1];
-
-        System.out.println("Mergin Tiles in: " + inputDir);
-
-        boolean success = (new File(outputDir)).mkdirs();
-
-        if (success) {
-            TileMerger tr = new TileMerger(inputDir, outputDir);
-            tr.MapImages();
-
-            try {
-                tr.ReduceImages();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            System.out.println("Tiles Merged");
-
-        } else {
-            System.out.println("Output Directory creation failed");
         }
     }
 }

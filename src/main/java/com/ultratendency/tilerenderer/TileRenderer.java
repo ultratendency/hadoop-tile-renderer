@@ -1,15 +1,11 @@
 package com.ultratendency.tilerenderer;
 
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.map.GridCoverageLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
 import org.geotools.process.ProcessException;
@@ -22,7 +18,6 @@ import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.geometry.Envelope;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 import org.apache.hadoop.io.Text;
 import org.geotools.map.FeatureLayer;
@@ -32,37 +27,31 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
 
 import javax.imageio.ImageIO;
 
 public class TileRenderer {
     private final StyleFactory styleFactory = CommonFactoryFinder.getStyleFactory();
-    private final String rasterSld = "sievert_colormap_ios.sld";
-    private final String bordertilesPath = "/home/hadoop/bordertiles_gmap/";
+    private static final String RASTER_SLD = "sievert_colormap_ios.sld";
+    private static final String BORDERTILES_PATH = "/home/hadoop/bordertiles_gmap/";
     private final org.opengis.geometry.Envelope env;
     private MapContent map = null;
 
-    public  final String outPutPath;
     public String fileName;
     public byte[] imageByteArray = null;
-    public int pointCounter = 0;
 
     public TileRenderer(Envelope env, String outputpath) {
         this.env = env;
-        this.outPutPath = outputpath;
         this.map = new MapContent();
     }
 
-    private void CreateImage(String imageFileName, boolean AddBorder) {
+    private void createImage(String imageFileName) {
         GTRenderer renderer = new StreamingRenderer();
         renderer.setMapContent(this.map);
 
@@ -84,33 +73,8 @@ public class TileRenderer {
         renderer.paint(gr, imageBounds, mapBounds);
 
         this.fileName = imageFileName + ".png";
-        this.imageByteArray = ConvertImageToByteArray(image);
+        this.imageByteArray = convertImageToByteArray(image);
         this.map.dispose();
-    }
-
-    private BufferedImage CreateBorderImage(String tileName, BufferedImage image) {
-        File borderTile = new File(bordertilesPath + tileName + ".png");
-
-        if (borderTile.exists()) {
-            BufferedImage overlay;
-
-            try {
-                overlay = ImageIO.read(borderTile);
-                BufferedImage mergedImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                        BufferedImage.TYPE_INT_ARGB);
-                Graphics g = mergedImage.getGraphics();
-
-                g.drawImage(image, 0, 0, null);
-                g.drawImage(overlay, 0, 0, null);
-
-                return mergedImage;
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return image;
     }
 
     private Style createFromSLD(File sld) {
@@ -124,26 +88,6 @@ public class TileRenderer {
         }
 
         return null;
-    }
-
-    public void renderIDW(Iterable<Text> values, String fileName) {
-        InverseDistanceWeightingLite idwLite = new InverseDistanceWeightingLite(getHashMapFromValues(values),
-                env,
-                127,
-                127);
-
-        float[][] idWgrid = idwLite.get2DGrid();
-
-        if (idWgrid != null) {
-            GridCoverageFactory gcf = new GridCoverageFactory();
-            GridCoverage2D mycov = gcf.create("Intepolated Coverage", idWgrid, env);
-            File sld = new File(getClass().getResource(rasterSld).getPath());
-            Style mystyle = createFromSLD(sld);
-            GridCoverageLayer heatLayer = new GridCoverageLayer(mycov, mystyle);
-
-            this.map.addLayer(heatLayer);
-            this.CreateImage(fileName, true);
-        }
     }
 
     public void renderPoints(Iterable<Text> values, int zoom, String fileName) {
@@ -165,30 +109,10 @@ public class TileRenderer {
             Layer pointLayer = new FeatureLayer(result, pointstyle);
 
             this.map.addLayer(pointLayer);
-            this.CreateImage(fileName, false);
+            this.createImage(fileName);
         } catch (ProcessException | TransformException e) {
             e.printStackTrace();
         }
-    }
-
-    private HashMap<DirectPosition2D, Float> getHashMapFromValues(Iterable<Text> values) {
-        HashMap<DirectPosition2D, Float> data = new HashMap<>();
-        CoordinateReferenceSystem crs = DefaultEngineeringCRS.CARTESIAN_2D;
-        this.pointCounter = 0;
-
-        for (Iterator<Text> i = values.iterator(); i.hasNext();) {
-            Text line = i.next();
-            String[] tokens = line.toString().split("\\,");
-            double latitude = Double.parseDouble(tokens[0]);
-            double longitude = Double.parseDouble(tokens[1]);
-            float value = Float.parseFloat(tokens[2]);
-
-            data.put(new DirectPosition2D(crs, longitude, latitude), value);
-        }
-
-        this.pointCounter = data.size();
-
-        return data;
     }
 
     private SimpleFeatureCollection getFeatureCollectionFromValues(Iterable<Text> values) {
@@ -204,8 +128,7 @@ public class TileRenderer {
         GeometryFactory factory = new GeometryFactory();
         DefaultFeatureCollection features = new DefaultFeatureCollection();
 
-        for (Iterator<Text> i = values.iterator(); i.hasNext();) {
-            Text line = i.next();
+        for (Text line : values) {
             String[] tokens = line.toString().split("\\,");
             double latitude = Double.parseDouble(tokens[0]);
             double longitude = Double.parseDouble(tokens[1]);
@@ -222,7 +145,7 @@ public class TileRenderer {
         return features;
     }
 
-    public static byte[] ConvertImageToByteArray(BufferedImage img) {
+    private static byte[] convertImageToByteArray(BufferedImage img) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] bytes = null;
 

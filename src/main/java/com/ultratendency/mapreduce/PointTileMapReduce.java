@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 
 public final class PointTileMapReduce {
-    public static final String NAME = "PointTileMapReduce";
+    private static final String NAME = "PointTileMapReduce";
 
     private PointTileMapReduce() {
     }
@@ -75,9 +75,9 @@ public final class PointTileMapReduce {
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context)
                 throws IOException, InterruptedException {
-            int zoom = Quadkey.GetZoomLevelFromQuadKey(key.toString());
-            int[] tileXY = Quadkey.QuadKeyToTileXY(key.toString());
-            Envelope env = GoogleTileHelper.GetEnv(tileXY[0], tileXY[1], zoom);
+            int zoom = Quadkey.getZoomLevelFromQuadKey(key.toString());
+            int[] tileXY = Quadkey.quadKeyToTileXY(key.toString());
+            Envelope env = GoogleTileHelper.getEnv(tileXY[0], tileXY[1], zoom);
             TileRenderer tr = new TileRenderer(env, FileOutputFormat.getOutputPath(context).toString());
 
             tr.renderPoints(values, zoom, zoom + "_" + tileXY[0] + "_" + tileXY[1] + "_P");

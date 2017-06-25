@@ -24,11 +24,7 @@ public class BinaryWritable implements Writable {
         }
     }
 
-    public byte[] getBytes() {
-        return bytes;
-    }
-
     public void setBytes(byte[] bytes) {
-        this.bytes = bytes;
+        this.bytes = bytes.clone();
     }
 }

@@ -26,9 +26,14 @@ import com.ultratendency.tilerenderer.Quadkey;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Locale;
 
 public final class ImportFromSafecastCSV {
-    public static final String NAME = "ImportFromSafecastCSV";
+    private static final String NAME = "ImportFromSafecastCSV";
+
+    private static int[] arr350 = { 5, 15, 16, 17, 18, 22 };
+    private static int[] arr100 = { 6, 7, 11, 13, 23 };
+    private static int[] arr132 = { 4, 9, 10, 12, 19, 24 };
 
     public ImportFromSafecastCSV() {
     }
@@ -59,19 +64,19 @@ public final class ImportFromSafecastCSV {
                 }
 
                 double value = Double.parseDouble(lineArr[3]);
-                String unit = lineArr[4].toLowerCase();
+                String unit = lineArr[4].toLowerCase(Locale.getDefault());
                 String deviceID = lineArr[6];
-                double microsievert = ConvertRadiationLevelToMicroSievert(deviceID, unit, value);
+                double microsievert = convertRadiationLevelToMicroSievert(deviceID, unit, value);
 
                 if (microsievert != -1) {
                     String capturedtime = lineArr[0];
-                    long timestampInMS = ConvertTimeStampToLong(capturedtime);
+                    long timestampInMS = convertTimeStampToLong(capturedtime);
 
                     if (timestampInMS != -1) {
                         double latitude = Double.parseDouble(lineArr[1]);
                         double longitude = Double.parseDouble(lineArr[2]);
                         double roundedValue = (double) Math.round(microsievert * 1000) / 1000;
-                        String quadkey = Quadkey.ComputeQuadkey(latitude, longitude, detail);
+                        String quadkey = Quadkey.computeQuadkey(latitude, longitude, detail);
                         byte[] rowkey = Bytes.toBytes(quadkey);
 
                         Put put = new Put(rowkey);
@@ -152,11 +157,7 @@ public final class ImportFromSafecastCSV {
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 
-    private static int[] Arr350 = { 5, 15, 16, 17, 18, 22 };
-    private static int[] Arr100 = { 6, 7, 11, 13, 23 };
-    private static int[] Arr132 = { 4, 9, 10, 12, 19, 24 };
-
-    private static double ConvertRadiationLevelToMicroSievert(String deviceID, String unit, Double value) {
+    private static double convertRadiationLevelToMicroSievert(String deviceID, String unit, Double value) {
         double microsievert = -1;
 
         if (unit.equals("microsievert") || unit.equals("usv")) {
@@ -172,11 +173,11 @@ public final class ImportFromSafecastCSV {
                 return -1;
             }
 
-            if (TestInArray(Arr350, id)) {
+            if (testInArray(arr350, id)) {
                 microsievert =  value / 350.0;
-            } else if (TestInArray(Arr100, id)) {
+            } else if (testInArray(arr100, id)) {
                 microsievert = value / 100;
-            } else if (TestInArray(Arr132, id)) {
+            } else if (testInArray(arr132, id)) {
                 microsievert =  value / 132;
             } else if (id == 21) {
                 microsievert = value / 1750;
@@ -191,7 +192,7 @@ public final class ImportFromSafecastCSV {
         }
     }
 
-    private static long ConvertTimeStampToLong(String timestamp) {
+    private static long convertTimeStampToLong(String timestamp) {
         Timestamp ts1 = java.sql.Timestamp.valueOf(timestamp);
         long timestampInMS = ts1.getTime();
 
@@ -215,7 +216,7 @@ public final class ImportFromSafecastCSV {
         return timestampInMS;
     }
 
-    private static boolean TestInArray(int[] arr, int checkValue) {
+    private static boolean testInArray(int[] arr, int checkValue) {
         for (int i : arr) {
             if (i == checkValue) {
                 return true;
