@@ -1,6 +1,10 @@
 Hadoop Tile Renderer
 ====================
 
+## Status
+
+[![Build Status](https://travis-ci.org/ultratendency/hadoop-tile-renderer.svg?branch=master)](https://travis-ci.org/ultratendency/hadoop-tile-renderer)
+
 Tested on Azure HDInsight
 
 ## Cluster setup - we do need some RAM!
